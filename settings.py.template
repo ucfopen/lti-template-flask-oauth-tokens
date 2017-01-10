@@ -1,0 +1,26 @@
+server_ip = "127.0.0.1"
+port = 8080
+servername = 'http://' + server_ip + ':5000'
+
+# API access and LTI key/secret
+BASE_URL = ''
+API_URL = ''
+API_KEY = ''
+
+# generate a secret key with urandom(24)
+secret_key = ''
+
+# logs
+LOG_FILE = 'errorland.log'
+LOG_FORMAT = '%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s'
+LOG_LEVEL = 'INFO'
+LOG_MAX_BYTES = 1024 * 1024 * 5  # 5 MB
+LOG_BACKUP_COUNT = 1
+
+# $oauth2_id: The Client_ID Instructure gives you
+# $oauth2_key: The Secret Instructure gives you
+# $oauth2_uri: The "Oauth2 Redirect URI" you provided instructure.
+
+oauth2_id = ""
+oauth2_key = ""
+oauth2_uri = 'http://' + server_ip + ":" + str(port) + "/oauthlogin"
