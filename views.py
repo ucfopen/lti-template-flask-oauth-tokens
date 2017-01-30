@@ -9,7 +9,7 @@ from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 app.secret_key = settings.secret_key
-app.config.from_object('config.DevelopmentConfig')
+app.config.from_object(settings.configClass)
 db = SQLAlchemy(app)
 
 
@@ -73,7 +73,6 @@ def check_valid_user(f):
         Otherwise, return an error page with corresponding message.
         """
         if request.form:
-            print "got to here"
             session.permanent = True
             # 1 hour long session
             app.permanent_session_lifetime = timedelta(minutes=60)
@@ -128,14 +127,22 @@ def check_valid_user(f):
 # ============================================
 
 
+@app.route('/index', methods=['POST', 'GET'])
+def index():
+    # Cool, we got through
+    msg = "hi!"
+    session['course_id'] = request.form.get('custom_canvas_course_id')
+    session['user_id'] = request.form.get('custom_canvas_user_id')
+
+    return render_template('index.htm.j2', msg=msg)
+
+
 # OAuth login
 # Redirect URI
 
 
 @app.route('/oauthlogin', methods=['POST', 'GET'])
-# @check_valid_user
 def oauth_login():
-    print "got here"
     code = request.args.get('code')
     payload = {
         'grant_type': 'authorization_code',
@@ -166,7 +173,7 @@ def oauth_login():
 
         msg = '''Authentication error,
             please refresh and try again. If this error persists,
-            please contact Webcourses Support.'''
+            please contact support.'''
         return render_template("error.htm.j2", msg=msg)
 
     if 'access_token' in r.json():
@@ -201,7 +208,7 @@ def oauth_login():
             )
             msg = '''Authentication error,
             please refresh and try again. If this error persists,
-            please contact Webcourses Support.'''
+            please contact support.'''
             return render_template("error.htm.j2", msg=msg)
 
     app.logger.warning(
@@ -212,7 +219,7 @@ def oauth_login():
     )
     msg = '''Authentication error,
         please refresh and try again. If this error persists,
-        please contact Webcourses Support.'''
+        please contact support.'''
     return render_template("error.htm.j2", msg=msg)
 
 
@@ -273,7 +280,7 @@ def launch():
                         )
                         msg = '''Authentication error,
                             please refresh and try again. If this error persists,
-                            please contact Webcourses Support.'''
+                            please contact support.'''
                         return render_template("error.htm.j2", msg=msg)
 
                     return redirect(url_for('index'))
@@ -313,7 +320,7 @@ def launch():
                 )
                 msg = '''Authentication error,
                     please refresh and try again. If this error persists,
-                    please contact Webcourses Support.'''
+                    please contact support.'''
                 return render_template("error.htm.j2", msg=msg)
         else:
             # not in db, go go oauth!!
@@ -340,19 +347,8 @@ def launch():
         )
     )
     msg = '''Authentication error, please refresh and try again. If this error persists,
-        please contact Webcourses Support.'''
+        please contact support.'''
     return render_template("error.htm.j2", msg=msg)
-
-
-@app.route('/index', methods=['POST', 'GET'])
-def index():
-    print "at index"
-    # Cool, we got through
-    msg = "hi!"
-    session['course_id'] = request.form.get('custom_canvas_course_id')
-    session['user_id'] = request.form.get('custom_canvas_user_id')
-
-    return render_template('index.htm.j2', msg=msg)
 
 
 # ============================================
@@ -375,5 +371,5 @@ def xml():
         return render_template(
             'error.htm.j2', msg='''No XML file. Please refresh
             and try again. If this error persists,
-            please contact Webcourses Support.'''
+            please contact support.'''
         )
