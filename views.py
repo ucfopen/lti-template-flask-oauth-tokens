@@ -51,16 +51,8 @@ class Users(db.Model):
 # Utility Functions
 # ============================================
 
-def error(exception=None):
-    return Response(
-        render_template(
-            'error.htm.j2',
-            message=exception.get(
-                'exception',
-                'Please contact your System Administrator.'
-            )
-        )
-    )
+def return_error(msg):
+    return render_template('error.htm.j2', msg=msg)
 
 
 def check_valid_user(f):
@@ -97,26 +89,25 @@ def check_valid_user(f):
         if not session:
             if not request.form:
                 app.logger.warning("No session and no request. Not allowed.")
-                return render_template(
-                    'error.htm.j2',
-                    msg='Not session or request provided.'
-                )
+                return_error('No session or request provided.')
 
         # no canvas_user_id
         if not request.form.get('custom_canvas_user_id') and 'canvas_user_id' not in session:
             app.logger.warning("No canvas user ID. Not allowed.")
-            return render_template(
-                'error.htm.j2',
-                msg='No canvas user ID provided.'
-            )
+            return_error('No canvas uer ID provided.')
 
         # no course_id
         if not request.form.get('custom_canvas_course_id') and 'course_id' not in session:
             app.logger.warning("No course ID. Not allowed.")
-            return render_template(
-                'error.htm.j2',
-                msg='No course_id provided.'
-            )
+            return_error('No course_id provided.')
+
+        # If they are neither instructor or admin, they're not in the right place
+
+        if 'instructor' and 'admin' not in session:
+            app.logger.warning("Not enrolled as Teacher or an Admin. Not allowed.")
+            return return_error('''You are not enrolled in this course as a Teacher or Designer.
+            Please refresh and try again. If this error persists, please contact
+            Webcourses Support.''')
 
         return f(*args, **kwargs)
     return decorated_function
@@ -174,7 +165,7 @@ def oauth_login():
         msg = '''Authentication error,
             please refresh and try again. If this error persists,
             please contact support.'''
-        return render_template("error.htm.j2", msg=msg)
+        return_error(msg)
 
     if 'access_token' in r.json():
         session['api_key'] = r.json()['access_token']
@@ -209,7 +200,7 @@ def oauth_login():
             msg = '''Authentication error,
             please refresh and try again. If this error persists,
             please contact support.'''
-            return render_template("error.htm.j2", msg=msg)
+            return_error(msg)
 
     app.logger.warning(
         "Some other error\n User: {} Course: {} \n {} \n Request headers: {} \n {}".format(
@@ -220,7 +211,7 @@ def oauth_login():
     msg = '''Authentication error,
         please refresh and try again. If this error persists,
         please contact support.'''
-    return render_template("error.htm.j2", msg=msg)
+    return_error(msg)
 
 
 @app.route('/launch', methods=['POST', 'GET'])
@@ -281,7 +272,7 @@ def launch():
                         msg = '''Authentication error,
                             please refresh and try again. If this error persists,
                             please contact support.'''
-                        return render_template("error.htm.j2", msg=msg)
+                        return_error(msg)
 
                     return redirect(url_for('index'))
             else:
@@ -321,7 +312,7 @@ def launch():
                 msg = '''Authentication error,
                     please refresh and try again. If this error persists,
                     please contact support.'''
-                return render_template("error.htm.j2", msg=msg)
+                return_error(msg)
         else:
             # not in db, go go oauth!!
             app.logger.info(
@@ -348,7 +339,7 @@ def launch():
     )
     msg = '''Authentication error, please refresh and try again. If this error persists,
         please contact support.'''
-    return render_template("error.htm.j2", msg=msg)
+    return_error(msg)
 
 
 # ============================================
@@ -367,9 +358,7 @@ def xml():
         )
     except:
         app.logger.error("No XML file.")
-
-        return render_template(
-            'error.htm.j2', msg='''No XML file. Please refresh
+        msg = '''No XML file. Please refresh
             and try again. If this error persists,
             please contact support.'''
-        )
+        return_error(msg)
