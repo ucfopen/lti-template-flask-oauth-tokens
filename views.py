@@ -132,7 +132,6 @@ def check_valid_user(f):
 def index(course_id=None, user_id=None, lti=lti):
     # Cool, we got through
     args = request.args.to_dict()
-    print args
     session['course_id'] = args['course_id']
     session['user_id'] = args['user_id']
     msg = "hi! Course ID is {}, User ID is {}.".format(session['course_id'], session['user_id'])
@@ -148,7 +147,6 @@ def index(course_id=None, user_id=None, lti=lti):
 @lti(error=error, role='staff', app=app)
 @check_valid_user
 def oauth_login(lti=lti):
-    print "got to oauthlogin"
     code = request.args.get('code')
     payload = {
         'grant_type': 'authorization_code',
