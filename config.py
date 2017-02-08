@@ -4,6 +4,7 @@ import settings
 class Config(object):
     SQLALCHEMY_DATABASE_URI = settings.select_db('Config')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    PYLTI_CONFIG = settings.PYLTI_CONFIG
 
 
 class BaseConfig(object):
@@ -11,6 +12,7 @@ class BaseConfig(object):
     TESTING = False
     SQLALCHEMY_DATABASE_URI = settings.select_db('BaseConfig')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    PYLTI_CONFIG = settings.PYLTI_CONFIG
 
 
 class DevelopmentConfig(BaseConfig):
@@ -19,6 +21,7 @@ class DevelopmentConfig(BaseConfig):
     SQLALCHEMY_DATABASE_URI = settings.select_db('DevelopmentConfig')
     # make the warning shut up until Flask-SQLAlchemy v3 comes out
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    PYLTI_CONFIG = settings.PYLTI_CONFIG
 
 
 class TestingConfig(BaseConfig):
@@ -26,3 +29,4 @@ class TestingConfig(BaseConfig):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = settings.select_db('TestingConfig')
     SQLALCHEMY_TRACK_MODIFICATIONS = True
+    PYLTI_CONFIG = settings.PYLTI_CONFIG

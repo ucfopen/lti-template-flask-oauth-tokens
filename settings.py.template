@@ -31,3 +31,12 @@ def select_db(x):
         'BaseConfig': 'sqlite:///test.db',
         'TestingConfig': 'sqlite:///test.db'
     }.get(x, 'sqlite:///test.db')
+
+PYLTI_CONFIG = {
+    'consumers': {
+        "key": {
+            "secret": "secret"
+        }
+    }
+}
+

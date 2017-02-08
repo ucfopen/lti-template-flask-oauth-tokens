@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, request, Response, redirect, 
 from flask_sqlalchemy import SQLAlchemy
 from functools import wraps
 from datetime import timedelta
+from pylti.flask import lti
 import time
 import requests
 import settings
@@ -56,6 +57,13 @@ def return_error(msg):
     return render_template('error.htm.j2', msg=msg)
 
 
+def error(exception=None):
+    app.logger.error("PyLTI error: {}".format(exception))
+    return return_error('''Authentication error,
+        please refresh and try again. If this error persists,
+        please contact Webcourses Support.''')
+
+
 def check_valid_user(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -104,7 +112,7 @@ def check_valid_user(f):
 
         # If they are neither instructor or admin, they're not in the right place
 
-        if 'instructor' and 'admin' not in session:
+        if 'instructor' not in session and 'admin' not in session:
             app.logger.warning("Not enrolled as Teacher or an Admin. Not allowed.")
             return return_error('''You are not enrolled in this course as a Teacher or Designer.
             Please refresh and try again. If this error persists, please contact
@@ -119,12 +127,15 @@ def check_valid_user(f):
 # ============================================
 
 
-@app.route('/index', methods=['POST', 'GET'])
-def index():
+@app.route('/index', methods=['GET'])
+@lti(error=error, request='session', role='staff', app=app)
+def index(course_id=None, user_id=None, lti=lti):
     # Cool, we got through
-    msg = "hi!"
-    session['course_id'] = request.form.get('custom_canvas_course_id')
-    session['user_id'] = request.form.get('custom_canvas_user_id')
+    args = request.args.to_dict()
+    print args
+    session['course_id'] = args['course_id']
+    session['user_id'] = args['user_id']
+    msg = "hi! Course ID is {}, User ID is {}.".format(session['course_id'], session['user_id'])
 
     return render_template('index.htm.j2', msg=msg)
 
@@ -134,7 +145,10 @@ def index():
 
 
 @app.route('/oauthlogin', methods=['POST', 'GET'])
-def oauth_login():
+@lti(error=error, role='staff', app=app)
+@check_valid_user
+def oauth_login(lti=lti):
+    print "got to oauthlogin"
     code = request.args.get('code')
     payload = {
         'grant_type': 'authorization_code',
@@ -187,7 +201,9 @@ def oauth_login():
                 # compare what was saved to the old session
                 # if it didn't update, error
                 if check_expiration.expires_in == long(session['expires_in']):
-                    return redirect(url_for('index'))
+                    course_id = session['course_id']
+                    user_id = session['canvas_user_id']
+                    return redirect(url_for('index', course_id=course_id, user_id=user_id))
                 else:
                     app.logger.error(
                         '''Error in updating user's expiration time
@@ -217,7 +233,9 @@ def oauth_login():
                         please refresh and try again. If this error persists,
                         please contact Webcourses Support.''')
                 else:
-                    return redirect(url_for('index'))
+                    course_id = session['course_id']
+                    user_id = session['canvas_user_id']
+                    return redirect(url_for('index', course_id=course_id, user_id=user_id))
 
             # got beyond if/else
             # error in adding or updating db
@@ -241,12 +259,11 @@ def oauth_login():
 
 
 @app.route('/launch', methods=['POST', 'GET'])
+@lti(error=error, request='initial', role='staff', app=app)
 @check_valid_user
-def launch():
-
+def launch(lti=lti):
     # if they aren't in our DB/their token is expired or invalid
     user = Users.query.filter_by(user_id=int(session['canvas_user_id'])).first()
-
     # Found a user
     if user is not None:
         # Get the expiration date
@@ -299,7 +316,10 @@ def launch():
                     # if it didn't update, error
 
                     if check_expiration.expires_in == long(session['expires_in']):
-                        return redirect(url_for('index'))
+                        course_id = request.form.get('custom_canvas_course_id')
+                        user_id = request.form.get('custom_canvas_user_id')
+                        return redirect(url_for('index', course_id=course_id, user_id=user_id))
+                        # return redirect(url_for('index'))
                     else:
                         app.logger.error(
                             '''Error in updating user's expiration time
@@ -328,7 +348,9 @@ def launch():
             # check for WWW-Authenticate
             # https://canvas.instructure.com/doc/api/file.oauth.html
             if 'WWW-Authenticate' not in r.headers and r.status_code != 401:
-                return redirect(url_for('index'))
+                course_id = request.form.get('custom_canvas_course_id')
+                user_id = request.form.get('custom_canvas_user_id')
+                return redirect(url_for('index', course_id=course_id, user_id=user_id))
             else:
                 app.logger.info(
                     '''Reauthenticating: \n {0} \n {1} \n {2} \n {3}'''.format(
