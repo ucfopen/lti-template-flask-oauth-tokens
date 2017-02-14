@@ -61,7 +61,7 @@ def error(exception=None):
     app.logger.error("PyLTI error: {}".format(exception))
     return return_error('''Authentication error,
         please refresh and try again. If this error persists,
-        please contact Webcourses Support.''')
+        please contact support.''')
 
 
 def check_valid_user(f):
@@ -115,8 +115,7 @@ def check_valid_user(f):
         if 'instructor' not in session and 'admin' not in session:
             app.logger.warning("Not enrolled as Teacher or an Admin. Not allowed.")
             return return_error('''You are not enrolled in this course as a Teacher or Designer.
-            Please refresh and try again. If this error persists, please contact
-            Webcourses Support.''')
+            Please refresh and try again. If this error persists, please contact support.''')
 
         return f(*args, **kwargs)
     return decorated_function
@@ -208,7 +207,7 @@ def oauth_login(lti=lti):
                         in the db:\n {0}'''.format(session))
                     return return_error('''Authentication error,
                             please refresh and try again. If this error persists,
-                            please contact Webcourses Support.''')
+                            please contact support.''')
             else:
                 # add new user to db
                 new_user = Users(
@@ -229,7 +228,7 @@ def oauth_login(lti=lti):
                     )
                     return return_error('''Authentication error,
                         please refresh and try again. If this error persists,
-                        please contact Webcourses Support.''')
+                        please contact support.''')
                 else:
                     course_id = session['course_id']
                     user_id = session['canvas_user_id']
@@ -243,7 +242,7 @@ def oauth_login(lti=lti):
             )
             return return_error('''Authentication error,
                 please refresh and try again. If this error persists,
-                please contact Webcourses Support.''')
+                please contact support.''')
 
     app.logger.warning(
         "Some other error\n {0} \n {1} \n Request headers: {2} \n {3}".format(
@@ -325,7 +324,7 @@ def launch(lti=lti):
                         )
                         return return_error('''Authentication error,
                             please refresh and try again. If this error persists,
-                            please contact Webcourses Support.''')
+                            please contact support.''')
             else:
                 # weird response from trying to use the refresh token
                 app.logger.info(
@@ -336,7 +335,7 @@ def launch(lti=lti):
                 )
                 return return_error('''Authentication error,
                     please refresh and try again. If this error persists,
-                    please contact Webcourses Support.''')
+                    please contact support.''')
         else:
             # good to go!
             # test the api key
@@ -369,7 +368,7 @@ def launch(lti=lti):
             )
             return return_error('''Authentication error,
                 please refresh and try again. If this error persists,
-                please contact Webcourses Support.''')
+                please contact support.''')
     else:
         # not in db, go go oauth!!
         app.logger.info(
@@ -380,7 +379,7 @@ def launch(lti=lti):
 
     app.logger.warning("Some other error, {0}".format(session))
     return return_error('''Authentication error, please refresh and try again. If this error persists,
-        please contact Webcourses Support.''')
+        please contact support.''')
 
 
 # ============================================

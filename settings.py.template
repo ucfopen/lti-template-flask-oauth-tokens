@@ -2,7 +2,7 @@
 BASE_URL = ''
 API_URL = ''
 
-# generate a secret key with urandom(24)
+# generate a secret key with os.urandom(24)
 secret_key = ''
 
 # logs
@@ -23,14 +23,12 @@ oauth2_uri = ""
 # config object settings
 configClass = 'config.DevelopmentConfig'
 
-
-def select_db(x):
-    return {
-        'DevelopmentConfig': 'sqlite:///test.db',
-        'Config': 'sqlite:///test.db',
-        'BaseConfig': 'sqlite:///test.db',
-        'TestingConfig': 'sqlite:///test.db'
-    }.get(x, 'sqlite:///test.db')
+DATABASE_URIS = {
+    'DevelopmentConfig': 'sqlite:///test.db',
+    'Config': 'sqlite:///test.db',
+    'BaseConfig': 'sqlite:///test.db',
+    'TestingConfig': 'sqlite:///test.db'
+}
 
 PYLTI_CONFIG = {
     'consumers': {
