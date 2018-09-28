@@ -1,17 +1,7 @@
-appdirs==1.4.0
-click==6.7
-Flask==0.12
-Flask-SQLAlchemy==2.1
-httplib2==0.10.3
-itsdangerous==0.24
-Jinja2==2.9.5
-MarkupSafe==0.23
+Flask==0.12.4
+Flask-SQLAlchemy==2.3.2
 oauth==1.0.1
 oauth2==1.9.0.post1
-packaging==16.8
-pyparsing==2.1.10
-requests==2.13.0
-six==1.10.0
-SQLAlchemy==1.1.5
-Werkzeug==0.11.15
+requests==2.19.1
+SQLAlchemy==1.2.12
 -e git+git@github.com:ucfcdl/pylti.git@roles#egg=PyLTI

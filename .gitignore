@@ -1,6 +1,7 @@
 # Flask
 settings.py
 *.pyc
+env/
 venv/
 error.log
 *.DS_STORE

@@ -8,8 +8,8 @@
 - Create a virtual environment and install from requirements.txt.
 
 ```
-virtualenv venv
-source venv/bin/activate
+virtualenv env
+source env/bin/activate
 pip install -r requirements.txt
 ```
 

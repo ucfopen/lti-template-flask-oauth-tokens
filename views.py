@@ -187,7 +187,7 @@ def oauth_login(lti=lti):
             user = Users.query.filter_by(user_id=int(session['canvas_user_id'])).first()
             if user is not None:
                 # update the current user's expiration time in db
-                user.refresh_token = session['refresh_token']
+                user.refresh_key = session['refresh_token']
                 user.expires_in = session['expires_in']
                 db.session.add(user)
                 db.session.commit()
@@ -261,121 +261,129 @@ def oauth_login(lti=lti):
 def launch(lti=lti):
     # if they aren't in our DB/their token is expired or invalid
     user = Users.query.filter_by(user_id=int(session['canvas_user_id'])).first()
+
     # Found a user
-    if user is not None:
-        # Get the expiration date
-        expiration_date = user.expires_in
-        refresh_token = user.refresh_key
-
-        # If expired or no api_key
-        if int(time.time()) > expiration_date or 'api_key' not in session:
-
-            app.logger.info(
-                '''Expired refresh token or api_key not in session\n
-                User: {0} \n Expiration date in db: {1} {2}'''.format(
-                    user.user_id, user.expires_in, session)
-            )
-            payload = {
-                'grant_type': 'refresh_token',
-                'client_id': settings.oauth2_id,
-                'redirect_uri': settings.oauth2_uri,
-                'client_secret': settings.oauth2_key,
-                'refresh_token': refresh_token
-            }
-            r = requests.post(settings.BASE_URL+'login/oauth2/token', data=payload)
-
-            # We got an access token and can proceed
-            if 'access_token' in r.json():
-                # Set the api key
-                session['api_key'] = r.json()['access_token']
-                app.logger.info(
-                    "New access token created\n User: {0}".format(user.user_id)
-                )
-                if 'refresh_token' in r.json():
-                    session['refresh_token'] = r.json()['refresh_token']
-
-                if 'expires_in' in r.json():
-                    # expires in seconds
-                    # add the seconds to current time for expiration time
-                    current_time = int(time.time())
-                    expires_in = current_time + r.json()['expires_in']
-                    session['expires_in'] = expires_in
-
-                    # Try to save the new expiration date
-                    user.expires_in = session['expires_in']
-                    db.session.commit()
-
-                    # check that the expiration date updated
-                    check_expiration = Users.query.filter_by(
-                        user_id=int(session['canvas_user_id'])).first()
-
-                    # compare what was saved to the old session
-                    # if it didn't update, error
-
-                    if check_expiration.expires_in == long(session['expires_in']):
-                        course_id = request.form.get('custom_canvas_course_id')
-                        user_id = request.form.get('custom_canvas_user_id')
-                        return redirect(url_for('index', course_id=course_id, user_id=user_id))
-                        # return redirect(url_for('index'))
-                    else:
-                        app.logger.error(
-                            '''Error in updating user's expiration time
-                             in the db:\n session: {0}'''.format(session)
-                        )
-                        return return_error('''Authentication error,
-                            please refresh and try again. If this error persists,
-                            please contact support.''')
-            else:
-                # weird response from trying to use the refresh token
-                app.logger.info(
-                    '''Access token not in json.
-                    Bad api key or refresh token? {0} {1} {2} \n {3}'''.format(
-                        r.status_code, session, payload, r.url
-                    )
-                )
-                return return_error('''Authentication error,
-                    please refresh and try again. If this error persists,
-                    please contact support.''')
-        else:
-            # good to go!
-            # test the api key
-            auth_header = {'Authorization': 'Bearer ' + session['api_key']}
-            r = requests.get(settings.API_URL + 'users/%s/profile' %
-                             (session['canvas_user_id']), headers=auth_header)
-            # check for WWW-Authenticate
-            # https://canvas.instructure.com/doc/api/file.oauth.html
-            if 'WWW-Authenticate' not in r.headers and r.status_code != 401:
-                course_id = request.form.get('custom_canvas_course_id')
-                user_id = request.form.get('custom_canvas_user_id')
-                return redirect(url_for('index', course_id=course_id, user_id=user_id))
-            else:
-                app.logger.info(
-                    '''Reauthenticating: \n {0} \n {1} \n {2} \n {3}'''.format(
-                        session, r.status_code, r.url, r.headers
-                    )
-                )
-                return redirect(
-                    settings.BASE_URL+'login/oauth2/auth?client_id=' +
-                    settings.oauth2_id + '&response_type=code&redirect_uri=' +
-                    settings.oauth2_uri
-                )
-            app.logger.error(
-                '''Some other error: \n
-                Session: {0} \n {1} \n {2} \n {3} \n {4}'''.format(
-                    session, r.status_code,
-                    r.url, r.headers, r.json()
-                )
-            )
-            return return_error('''Authentication error,
-                please refresh and try again. If this error persists,
-                please contact support.''')
-    else:
+    if not user:
         # not in db, go go oauth!!
         app.logger.info(
             "Person doesn't have an entry in db, redirecting to oauth: {0}".format(session)
         )
         return redirect(settings.BASE_URL+'login/oauth2/auth?client_id='+settings.oauth2_id +
                         '&response_type=code&redirect_uri='+settings.oauth2_uri)
+
+    # Get the expiration date
+    expiration_date = user.expires_in
+    refresh_token = user.refresh_key
+
+    # If expired or no api_key
+    if int(time.time()) > expiration_date or 'api_key' not in session:
+
+        app.logger.info(
+            '''Expired refresh token or api_key not in session\n
+            User: {0} \n Expiration date in db: {1} {2}'''.format(
+                user.user_id, user.expires_in, session)
+        )
+        payload = {
+            'grant_type': 'refresh_token',
+            'client_id': settings.oauth2_id,
+            'redirect_uri': settings.oauth2_uri,
+            'client_secret': settings.oauth2_key,
+            'refresh_token': refresh_token
+        }
+        r = requests.post(settings.BASE_URL+'login/oauth2/token', data=payload)
+
+        # We got an access token and can proceed
+        if 'access_token' in r.json():
+            # Set the api key
+            session['api_key'] = r.json()['access_token']
+            app.logger.info(
+                "New access token created\n User: {0}".format(user.user_id)
+            )
+            if 'refresh_token' in r.json():
+                session['refresh_token'] = r.json()['refresh_token']
+
+            if 'expires_in' in r.json():
+                # expires in seconds
+                # add the seconds to current time for expiration time
+                current_time = int(time.time())
+                expires_in = current_time + r.json()['expires_in']
+                session['expires_in'] = expires_in
+
+                # Try to save the new expiration date
+                user.expires_in = session['expires_in']
+                db.session.commit()
+
+                # check that the expiration date updated
+                check_expiration = Users.query.filter_by(
+                    user_id=int(session['canvas_user_id'])).first()
+
+                # compare what was saved to the old session
+                # if it didn't update, error
+
+                if check_expiration.expires_in == long(session['expires_in']):
+                    course_id = request.form.get('custom_canvas_course_id')
+                    user_id = request.form.get('custom_canvas_user_id')
+                    return redirect(url_for('index', course_id=course_id, user_id=user_id))
+                    # return redirect(url_for('index'))
+                else:
+                    app.logger.error(
+                        '''Error in updating user's expiration time
+                         in the db:\n session: {0}'''.format(session)
+                    )
+                    return return_error('''Authentication error,
+                        please refresh and try again. If this error persists,
+                        please contact support.''')
+        else:
+            # weird response from trying to use the refresh token
+            app.logger.info(
+                '''Access token not in json.
+                Bad api key or refresh token? {0} {1} {2} \n {3}'''.format(
+                    r.status_code, session, payload, r.url
+                )
+            )
+            app.logger.info(
+                '''Reauthenticating: \n {0} \n {1} \n {2} \n {3}'''.format(
+                    session, r.status_code, r.url, r.headers
+                )
+            )
+            return redirect(
+                settings.BASE_URL+'login/oauth2/auth?client_id=' +
+                settings.oauth2_id + '&response_type=code&redirect_uri=' +
+                settings.oauth2_uri
+            )
+    else:
+        # good to go!
+        # test the api key
+        auth_header = {'Authorization': 'Bearer ' + session['api_key']}
+        r = requests.get(settings.API_URL + 'users/%s/profile' %
+                         (session['canvas_user_id']), headers=auth_header)
+        # check for WWW-Authenticate
+        # https://canvas.instructure.com/doc/api/file.oauth.html
+        if 'WWW-Authenticate' not in r.headers and r.status_code != 401:
+            course_id = request.form.get('custom_canvas_course_id')
+            user_id = request.form.get('custom_canvas_user_id')
+            return redirect(url_for('index', course_id=course_id, user_id=user_id))
+        else:
+            app.logger.info(
+                '''Reauthenticating: \n {0} \n {1} \n {2} \n {3}'''.format(
+                    session, r.status_code, r.url, r.headers
+                )
+            )
+            return redirect(
+                settings.BASE_URL+'login/oauth2/auth?client_id=' +
+                settings.oauth2_id + '&response_type=code&redirect_uri=' +
+                settings.oauth2_uri
+            )
+        app.logger.error(
+            '''Some other error: \n
+            Session: {0} \n {1} \n {2} \n {3} \n {4}'''.format(
+                session, r.status_code,
+                r.url, r.headers, r.json()
+            )
+        )
+        return return_error('''Authentication error,
+            please refresh and try again. If this error persists,
+            please contact support.''')
 
     app.logger.warning("Some other error, {0}".format(session))
     return return_error('''Authentication error, please refresh and try again. If this error persists,
