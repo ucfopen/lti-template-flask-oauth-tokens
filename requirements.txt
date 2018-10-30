@@ -1,7 +1,7 @@
-Flask==0.12.4
+Flask==1.0.2
 Flask-SQLAlchemy==2.3.2
 oauth==1.0.1
 oauth2==1.9.0.post1
-requests==2.19.1
+requests>=2.20.0
 SQLAlchemy==1.2.12
 -e git+git@github.com:ucfcdl/pylti.git@roles#egg=PyLTI
