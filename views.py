@@ -15,10 +15,7 @@ app.config.from_object(settings.configClass)
 db = SQLAlchemy(app)
 
 
-# ============================================
 # Logging
-# ============================================
-
 formatter = logging.Formatter(settings.LOG_FORMAT)
 handler = RotatingFileHandler(
     settings.LOG_FILE,
@@ -29,11 +26,8 @@ handler.setLevel(logging.getLevelName(settings.LOG_LEVEL))
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-# ============================================
+
 # DB Model
-# ============================================
-
-
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, unique=True)
@@ -49,10 +43,7 @@ class Users(db.Model):
         return '<User %r>' % self.user_id
 
 
-# ============================================
 # Utility Functions
-# ============================================
-
 def return_error(msg):
     return render_template('error.htm.j2', msg=msg)
 
@@ -211,11 +202,8 @@ def refresh_access_token(user):
         'expiration_date': new_expiration_date
     }
 
-# ============================================
+
 # Web Views / Routes
-# ============================================
-
-
 @app.route('/index', methods=['GET'])
 @lti(error=error, request='session', role='staff', app=app)
 def index(course_id=None, user_id=None, lti=lti):
@@ -230,8 +218,6 @@ def index(course_id=None, user_id=None, lti=lti):
 
 # OAuth login
 # Redirect URI
-
-
 @app.route('/oauthlogin', methods=['POST', 'GET'])
 @lti(error=error, role='staff', app=app)
 @check_valid_user
@@ -440,10 +426,7 @@ def launch(lti=lti):
                 )
 
 
-# ============================================
 # XML
-# ============================================
-
 @app.route("/xml/", methods=['GET'])
 def xml():
     """
