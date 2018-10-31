@@ -121,6 +121,96 @@ def check_valid_user(f):
     return decorated_function
 
 
+def refresh_access_token(user):
+    """
+    Use a user's refresh token to get a new access token.
+
+    :param user: The user to get a new access token for.
+    :type user: :class:`Users`
+
+    :rtype: dict
+    :returns: Dictionary with keys 'access_token' and 'expiration_date'.
+        Values will be `None` if refresh fails.
+    """
+    refresh_token = user.refresh_key
+
+    payload = {
+            'grant_type': 'refresh_token',
+            'client_id': settings.oauth2_id,
+            'redirect_uri': settings.oauth2_uri,
+            'client_secret': settings.oauth2_key,
+            'refresh_token': refresh_token
+        }
+    response = requests.post(
+        settings.BASE_URL + 'login/oauth2/token',
+        data=payload
+    )
+
+    if 'access_token' not in response.json():
+        app.logger.warning((
+            'Access token not in json. Bad api key or refresh token.\n'
+            'URL: {}\n'
+            'Status Code: {}\n'
+            'Payload: {}\n'
+            'Session: {}'
+        ).format(response.url, response.status_code, payload, session))
+        return {
+            'access_token': None,
+            'expiration_date': None
+        }
+
+    api_key = response.json()['access_token']
+    app.logger.info(
+        'New access token created\n User: {0}'.format(user.user_id)
+    )
+
+    if 'expires_in' not in response.json():
+        app.logger.warning((
+            'expires_in not in json. Bad api key or refresh token.\n'
+            'URL: {}\n'
+            'Status Code: {}\n'
+            'Payload: {}\n'
+            'Session: {}'
+        ).format(response.url, response.status_code, payload, session))
+        return {
+            'access_token': None,
+            'expiration_date': None
+        }
+
+    current_time = int(time.time())
+    new_expiration_date = current_time + response.json()['expires_in']
+
+    # Update expiration date in db
+    user.expires_in = new_expiration_date
+    db.session.commit()
+
+    # Confirm that expiration date has been updated
+    updated_user = Users.query.filter_by(user_id=int(user.user_id)).first()
+    if updated_user.expires_in != new_expiration_date:
+        readable_expires_in = time.strftime(
+            '%a, %d %b %Y %H:%M:%S',
+            time.localtime(updated_user.expires_in)
+        )
+        readable_new_expiration = time.strftime(
+            '%a, %d %b %Y %H:%M:%S',
+            time.localtime(new_expiration_date)
+        )
+        app.logger.error((
+            'Error in updating user\'s expiration time in the db:\n'
+            'session: {}\n'
+            'DB expires_in: {}\n'
+            'new_expiration_date: {}'
+        ).format(session, readable_expires_in, readable_new_expiration))
+        return {
+            'access_token': None,
+            'expiration_date': None
+        }
+
+    return {
+        'access_token': api_key,
+        'expiration_date': new_expiration_date
+    }
+
 # ============================================
 # Web Views / Routes
 # ============================================
