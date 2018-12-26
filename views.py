@@ -249,8 +249,7 @@ def oauth_login(lti=lti):
     if 'access_token' in r.json():
         session['api_key'] = r.json()['access_token']
 
-        if 'refresh_token' in r.json():
-            session['refresh_token'] = r.json()['refresh_token']
+        refresh_token = r.json()['refresh_token']
 
         if 'expires_in' in r.json():
             # expires in seconds
@@ -263,7 +262,7 @@ def oauth_login(lti=lti):
             user = Users.query.filter_by(user_id=int(session['canvas_user_id'])).first()
             if user is not None:
                 # update the current user's expiration time in db
-                user.refresh_key = session['refresh_token']
+                user.refresh_key = refresh_token
                 user.expires_in = session['expires_in']
                 db.session.add(user)
                 db.session.commit()
@@ -288,7 +287,7 @@ def oauth_login(lti=lti):
                 # add new user to db
                 new_user = Users(
                     session['canvas_user_id'],
-                    session['refresh_token'],
+                    refresh_token,
                     session['expires_in']
                 )
                 db.session.add(new_user)
