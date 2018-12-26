@@ -22,6 +22,16 @@ import os
 os.urandom(24)
 ```
 
+##### Scope enforcement
+
+You may optionally enable scope enforcement when you create your developer key for Canvas. This means that people using keys derived from your developer key will only be able to access the endpoints which are listed in the enforcement list, which is good for security.
+
+To do this, turn on `Enforce Scopes` during the creation of your key. You can find the scopes you need beneath each API endpoint in the [Canvas API documentation](https://canvas.instructure.com/doc/api/index.html), listed after `Scope:`. The format listed is the exact format you'll need to use.
+
+The base template requires that `url:GET|/api/v1/users/:user_id/profile` is checked. Your use of the Canvas API may require more.
+
+Once you have enabled your desired scopes, place them in the configuration file in the list for `oauth2_scopes`, one per line.
+
 
 ### Create a DB
 - Modify the model as you see fit before creating the db! SQLAlchemy can make migrating a pain.

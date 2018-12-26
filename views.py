@@ -55,6 +55,19 @@ def error(exception=None):
         please contact support.''')
 
 
+def redirect_to_auth():
+    """Redirects the user to the Canvas OAUTH flow
+
+    This function uses BASE_URL and the oauth settings from settings.py to redirect the
+    user to the appropriate place in their Canvas installation for authentication.
+    """
+    return redirect(
+        "{}login/oauth2/auth?client_id={}&response_type=code&redirect_uri={}&scope={}".format(
+            settings.BASE_URL, settings.oauth2_id, settings.oauth2_uri, settings.oauth2_scopes
+        )
+    )
+
+
 def check_valid_user(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -344,13 +357,7 @@ def launch(lti=lti):
         app.logger.info(
             "Person doesn't have an entry in db, redirecting to oauth: {0}".format(session)
         )
-        return redirect(
-            '{}login/oauth2/auth?client_id={}&response_type=code&redirect_uri={}'.format(
-                settings.BASE_URL,
-                settings.oauth2_id,
-                settings.oauth2_uri
-            )
-        )
+        return redirect_to_auth()
 
     # Get the expiration date
     expiration_date = user.expires_in
@@ -380,13 +387,7 @@ def launch(lti=lti):
         else:
             # Refresh didn't work. Reauthenticate.
             app.logger.info('Reauthenticating:\nSession: {}'.format(session))
-            return redirect(
-                '{}login/oauth2/auth?client_id={}&response_type=code&redirect_uri={}'.format(
-                    settings.BASE_URL,
-                    settings.oauth2_id,
-                    settings.oauth2_uri
-                )
-            )
+            return redirect_to_auth()
     else:
         # Have an API key that shouldn't be expired. Test it to be sure.
         auth_header = {'Authorization': 'Bearer ' + session['api_key']}
@@ -417,13 +418,7 @@ def launch(lti=lti):
             else:
                 # Refresh didn't work. Reauthenticate.
                 app.logger.info('Reauthenticating:\nSession: {}'.format(session))
-                return redirect(
-                    '{}login/oauth2/auth?client_id={}&response_type=code&redirect_uri={}'.format(
-                        settings.BASE_URL,
-                        settings.oauth2_id,
-                        settings.oauth2_uri
-                    )
-                )
+                return redirect_to_auth()
 
 
 # XML

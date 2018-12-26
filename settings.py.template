@@ -17,10 +17,15 @@ LOG_BACKUP_COUNT = 1
 # $oauth2_id: The Client_ID Instructure gives you
 # $oauth2_key: The Secret Instructure gives you
 # $oauth2_uri: The "Oauth2 Redirect URI" you provided instructure.
+# $oauth2_scopes: The scopes to request for use by this application.
 
 oauth2_id = ""
 oauth2_key = ""
 oauth2_uri = ""
+oauth2_scopes = " ".join([
+    # Uncomment the following line and add your desired scopes to enable token scoping:
+    # "url:GET|/api/v1/users/:user_id/profile",
+])
 
 # config object settings
 configClass = 'config.DevelopmentConfig'
