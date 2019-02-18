@@ -396,7 +396,7 @@ def launch(lti=lti):
 
         # check for WWW-Authenticate
         # https://canvas.instructure.com/doc/api/file.oauth.html
-        if 'WWW-Authenticate' not in r.headers and r.status_code != 401:
+        if 'WWW-Authenticate' not in r.headers and r.status_code == 200:
             return redirect(url_for(
                 'index',
                 course_id=session['course_id'],
