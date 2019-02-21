@@ -259,6 +259,18 @@ def oauth_login(lti=lti):
             please contact support.'''
         return return_error(msg)
 
+    elif r.status_code == 422:
+        # https://github.com/instructure/canvas-lms/issues/1343
+        app.logger.error(
+            "Status code 422 from oauth, are your oauth scopes valid?"
+        )
+
+        msg = '''Authentication error,
+            please refresh and try again. If this error persists,
+            please contact support.'''
+        return return_error(msg)
+
+
     if 'access_token' in r.json():
         session['api_key'] = r.json()['access_token']
 
