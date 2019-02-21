@@ -223,6 +223,19 @@ def index(course_id=None, user_id=None, lti=lti):
 @check_valid_user
 def oauth_login(lti=lti):
     code = request.args.get('code')
+
+    if not code:
+        error = request.args.get('error', 'None given')
+        error_description = request.args.get('error_description', 'None given')
+        app.logger.error('''OAUTH did not return a code we could use to sign in. Canvas says:
+        Error: {0}
+        Error description: {1}'''.format(error, error_description))
+
+        msg = '''Authentication error,
+            please refresh and try again. If this error persists,
+            please contact support.'''
+        return return_error(msg)
+
     payload = {
         'grant_type': 'authorization_code',
         'client_id': settings.oauth2_id,
