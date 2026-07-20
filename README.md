@@ -1,4 +1,10 @@
-[![Join UCF Open Slack Discussions](https://ucf-open-slackin.herokuapp.com/badge.svg)](https://ucf-open-slackin.herokuapp.com/)
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/) [![Join UCF Open Slack Discussions](https://badgen.net/badge/icon/ucfopen?icon=slack&label=slack&color=pink)](https://dl.ucf.edu/join-ucfopen)
+
+# DEPRECATED
+
+⚠️ This template is no longer supported.
+
+Please use our cookiecutter template instead: https://github.com/ucfopen/cookiecutter-python-lti
 
 # LTI Template: Flask with OAUTH tokens
 
